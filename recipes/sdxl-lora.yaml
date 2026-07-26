@@ -34,7 +34,7 @@ stages:
       - --num_cpu_threads_per_process=2
       - sdxl_train_network.py
       - --pretrained_model_name_or_path=${transfers.base_model}
-      - --train_data_dir=${transfers.dataset_dir}
+      - --train_data_dir=${transfers.dataset_dir}/image
       - --caption_extension=.txt
       - --resolution=${inputs.resolution}
       - --train_batch_size=${inputs.train_batch_size}
