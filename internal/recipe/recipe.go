@@ -316,6 +316,10 @@ func validateExtensions(root string, extensions []string) error {
 		if entry.IsDir() {
 			return nil
 		}
+		// macOS Finder metadata files are not training inputs.
+		if filepath.Base(path) == ".DS_Store" || strings.HasPrefix(filepath.Base(path), "._") {
+			return nil
+		}
 		if !entry.Type().IsRegular() {
 			return fmt.Errorf("special file rejected: %s", path)
 		}
