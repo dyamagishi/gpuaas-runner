@@ -15,6 +15,10 @@
 
 CIの有料E2Eは `workflow_dispatch` のみで、forkやpushでは実行しない。
 
+## 実測済みSDXL smoke
+
+2026-07-26、A40（$0.44/h）でAnimagine XL 4.0 checkpointをPod内HTTPS取得し、KAKUCHI_NENEのPNG/TXT 10組を10 step学習した。平均lossは約0.0455。`runs/sdxl-lora/af55d47133af4dd4/checkpoints/` に `kakuchi_nene.safetensors` とstep checkpointを回収し、Podが0件になったことを確認した。
+
 ## Remote runner status
 
 remote runnerは `/opt/gpu-run/remote-runner start RUN_DIR ARGV_FILE WORKING_DIR [ARTIFACT_ROOT]` で起動し、内部のrun modeが実処理を行う。`ARGV_FILE` はNUL区切りのargvで、shell文字列や`eval`は使わない。runnerは `status.json`、`stdout.log`、`stderr.log`、`artifact-manifest.jsonl`（JSONエンコード済みpath/size/SHA-256）と終了コードをrun directoryへ書く。manifestをatomic renameしてからterminal statusを書き込むが、CLI側のSHA-256照合は未実装である。artifactの `when` とstageの `timeout` もv1では実行制御に未適用である。image entrypointはsshdをforegroundで保持し、root password loginは無効。CLIのSSH鍵配布・attach/recover統合とRunpod E2Eは未実施。
