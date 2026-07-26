@@ -1,0 +1,57 @@
+schema_version: 1
+name: sdxl-lora
+# Replace REPLACE_WITH_64_HEX_DIGEST after publishing the image. The CLI must
+# reject this placeholder and any mutable tag before creating a Pod.
+image: ghcr.io/olduvai-jp/gpu-run-sd-scripts@sha256:REPLACE_WITH_64_HEX_DIGEST
+
+inputs:
+  # Images and same-name .txt captions must be in this one directory.
+  dataset_dir: {type: directory, required: true, extensions: [jpg, jpeg, png, webp, txt]}
+  base_model: {type: directory, required: true}
+  output_name: {type: string, required: true}
+  resolution: {type: integer, default: 1024}
+  train_batch_size: {type: integer, default: 1}
+  max_train_steps: {type: integer, default: 1000}
+  learning_rate: {type: number, default: 0.0001}
+
+requirements:
+  gpus: 1
+  min_vram_gb: 24
+  disk_gb: 80
+  cuda: "12.4"
+  allowed_gpu_ids: ["NVIDIA RTX A5000", "NVIDIA RTX 4090", "NVIDIA A40", "NVIDIA A100"]
+
+transfers:
+  - {input: dataset_dir, remote_path: inputs/dataset}
+  - {input: base_model, remote_path: inputs/base_model}
+
+stages:
+  - id: train
+    working_dir: /opt/sd-scripts
+    argv:
+      - accelerate
+      - launch
+      - --num_cpu_threads_per_process=2
+      - sdxl_train_network.py
+      - --pretrained_model_name_or_path=${transfers.base_model}
+      - --train_data_dir=${transfers.dataset_dir}
+      - --caption_extension=.txt
+      - --resolution=${inputs.resolution}
+      - --train_batch_size=${inputs.train_batch_size}
+      - --max_train_steps=${inputs.max_train_steps}
+      - --learning_rate=${inputs.learning_rate}
+      - --output_dir=/workspace/gpu-run/runs/${run.id}/output
+      - --output_name=${inputs.output_name}
+      - --network_module=networks.lora
+      - --save_model_as=safetensors
+      - --mixed_precision=fp16
+
+artifacts:
+  - name: final_model
+    kind: file
+    remote_path: "output/${inputs.output_name}.safetensors"
+    required: true
+  - name: checkpoints
+    kind: directory
+    remote_path: "output"
+    required: false

@@ -1,0 +1,13 @@
+Port 22
+Protocol 2
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+PermitRootLogin prohibit-password
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+UsePAM no
+X11Forwarding no
+PrintMotd no
+PidFile /run/sshd/sshd.pid
+StrictModes yes
