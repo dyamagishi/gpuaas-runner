@@ -1,6 +1,6 @@
 # 運用とsecret
 
-必要なsecretはローカル環境変数 `RUNPOD_API_KEY`（Pod API）のみ。v1のsample recipeはローカルbase-model directoryを転送するため、HF tokenをremoteへ注入しない。recipeで `secret: true` の入力やenv注入を指定した場合は、Pod作成前に拒否する。将来secret入力を実装する場合も、ファイル、recipe、SQLite、イベントログへ値を書かない。CIではGitHub Actions secretへ登録し、workflowのログマスキングを有効にする。
+必要なsecretはローカル環境変数 `RUNPOD_API_KEY`（Pod API）のみ。v1のsample recipeはローカルのSDXL `.safetensors` checkpointを転送するため、HF tokenをremoteへ注入しない。recipeで `secret: true` の入力やenv注入を指定した場合は、Pod作成前に拒否する。将来secret入力を実装する場合も、ファイル、recipe、SQLite、イベントログへ値を書かない。CIではGitHub Actions secretへ登録し、workflowのログマスキングを有効にする。
 
 実行前に `gpu-run config init` で `max_hourly_usd`、`max_runtime`、`max_disk_gb`、`allowed_gpu_ids` を必ず設定する。Pod作成時はRunpod側の `terminateAfter` に絶対期限を設定し、価格が上限を超えたら転送前に破棄する。foregroundのCtrl-Cはcleanupを試みて終了する。detach/attachはv1では未実装である。
 

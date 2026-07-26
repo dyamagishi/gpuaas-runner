@@ -7,7 +7,7 @@ image: ghcr.io/dyamagishi/gpu-run-sd-scripts@sha256:REPLACE_WITH_64_HEX_DIGEST
 inputs:
   # Images and same-name .txt captions must be in this one directory.
   dataset_dir: {type: directory, required: true, extensions: [jpg, jpeg, png, webp, txt]}
-  base_model: {type: directory, required: true}
+  base_model: {type: file, required: true}
   output_name: {type: string, required: true}
   resolution: {type: integer, default: 1024}
   train_batch_size: {type: integer, default: 1}
@@ -23,7 +23,7 @@ requirements:
 
 transfers:
   - {input: dataset_dir, remote_path: inputs/dataset}
-  - {input: base_model, remote_path: inputs/base_model}
+  - {input: base_model, remote_path: inputs/base_model.safetensors}
 
 stages:
   - id: train
