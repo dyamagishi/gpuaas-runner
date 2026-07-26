@@ -56,7 +56,11 @@ func safeRemote(p string) error {
 }
 
 func (q Job) sshArgs() []string {
-	a := []string{"-p", fmt.Sprint(q.SSH.Port), "-i", q.SSH.Key, "-o", "StrictHostKeyChecking=yes"}
+	checking := "accept-new"
+	if q.SSH.KnownHosts != "" {
+		checking = "yes"
+	}
+	a := []string{"-p", fmt.Sprint(q.SSH.Port), "-i", q.SSH.Key, "-o", "StrictHostKeyChecking=" + checking}
 	if q.SSH.KnownHosts != "" {
 		a = append(a, "-o", "UserKnownHostsFile="+q.SSH.KnownHosts)
 	}

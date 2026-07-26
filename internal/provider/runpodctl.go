@@ -119,35 +119,63 @@ func (r *Runpodctl) StopPod(ctx context.Context, id string) error {
 	return e
 }
 func (r *Runpodctl) SSHInfo(ctx context.Context, id string) (SSHInfo, error) {
-	b, e := r.call(ctx, "ssh", "info", "-o", "json", id)
-	if e != nil {
-		return SSHInfo{}, e
+	deadline := time.Now().Add(5 * time.Minute)
+	for {
+		b, e := r.call(ctx, "ssh", "info", "-o", "json", id)
+		if e != nil {
+			return SSHInfo{}, e
+		}
+		var w struct {
+			Error      string `json:"error"`
+			Host       string `json:"host"`
+			IP         string `json:"ip"`
+			Port       int    `json:"port"`
+			User       string `json:"user"`
+			PrivateKey string `json:"privateKey"`
+			KnownHosts string `json:"knownHosts"`
+			SSHHost    string `json:"sshHost"`
+			SSHPort    int    `json:"sshPort"`
+			SSHKey     struct {
+				Path string `json:"path"`
+			} `json:"ssh_key"`
+		}
+		if json.Unmarshal(b, &w) != nil {
+			return SSHInfo{}, errors.New("runpodctl ssh info: unsupported JSON")
+		}
+		if w.Error != "" {
+			if !strings.Contains(strings.ToLower(w.Error), "not ready") {
+				return SSHInfo{}, fmt.Errorf("runpodctl ssh info: %s", w.Error)
+			}
+		} else {
+			if w.Host == "" {
+				w.Host = w.SSHHost
+			}
+			if w.Host == "" {
+				w.Host = w.IP
+			}
+			if w.Port == 0 {
+				w.Port = w.SSHPort
+			}
+			if w.User == "" {
+				w.User = "root"
+			}
+			if w.Host == "" || w.Port == 0 {
+				return SSHInfo{}, errors.New("runpodctl ssh info: host and port required")
+			}
+			if w.PrivateKey == "" {
+				w.PrivateKey = w.SSHKey.Path
+			}
+			return SSHInfo{Host: w.Host, Port: w.Port, User: w.User, PrivateKey: w.PrivateKey, KnownHosts: w.KnownHosts}, nil
+		}
+		if time.Now().After(deadline) {
+			return SSHInfo{}, fmt.Errorf("runpodctl ssh info: pod %s not ready after 5m", id)
+		}
+		select {
+		case <-ctx.Done():
+			return SSHInfo{}, ctx.Err()
+		case <-time.After(10 * time.Second):
+		}
 	}
-	var w struct {
-		Host       string `json:"host"`
-		Port       int    `json:"port"`
-		User       string `json:"user"`
-		PrivateKey string `json:"privateKey"`
-		KnownHosts string `json:"knownHosts"`
-		SSHHost    string `json:"sshHost"`
-		SSHPort    int    `json:"sshPort"`
-	}
-	if json.Unmarshal(b, &w) != nil {
-		return SSHInfo{}, errors.New("runpodctl ssh info: unsupported JSON")
-	}
-	if w.Host == "" {
-		w.Host = w.SSHHost
-	}
-	if w.Port == 0 {
-		w.Port = w.SSHPort
-	}
-	if w.User == "" {
-		w.User = "root"
-	}
-	if w.Host == "" || w.Port == 0 {
-		return SSHInfo{}, errors.New("runpodctl ssh info: host and port required")
-	}
-	return SSHInfo{Host: w.Host, Port: w.Port, User: w.User, PrivateKey: w.PrivateKey, KnownHosts: w.KnownHosts}, nil
 }
 func (r *Runpodctl) find(ctx context.Context, name string) (Pod, error) {
 	a, e := r.ListPods(ctx, name)
