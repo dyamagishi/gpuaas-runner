@@ -88,7 +88,9 @@ func (q Job) Transfer(ctx context.Context, src, dst string) error {
 	if err := q.exec(ctx, "ssh", append(append(q.sshArgs(), q.sshHostTarget(), "--", "mkdir", "-p", filepath.Dir(remote)), []string{}...)...); err != nil {
 		return err
 	}
-	return q.exec(ctx, "rsync", "-az", "-e", q.rsyncSSH(), src, q.sshTarget(remote))
+	// Do not compress already-compressed checkpoints (safetensors); this is
+	// materially faster over RunPod's SSH port and avoids CPU-bound transfers.
+	return q.exec(ctx, "rsync", "-a", "-e", q.rsyncSSH(), src, q.sshTarget(remote))
 }
 
 // Run writes each stage's argv as a NUL-delimited file and asks the image's
@@ -123,7 +125,7 @@ func (q Job) Run(ctx context.Context) error {
 			return err
 		}
 		remoteArgv := fmt.Sprintf("%s/stage-%d.argv", q.RemoteDir, i)
-		if err = q.exec(ctx, "rsync", "-az", "-e", q.rsyncSSH(), name, q.sshTarget(remoteArgv)); err != nil {
+		if err = q.exec(ctx, "rsync", "-a", "-e", q.rsyncSSH(), name, q.sshTarget(remoteArgv)); err != nil {
 			return err
 		}
 		wd := "/workspace"
