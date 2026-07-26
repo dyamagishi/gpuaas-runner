@@ -69,7 +69,7 @@ func (r *Runpodctl) CreatePod(ctx context.Context, q PodRequest) (Pod, error) {
 		args = append(args, "--gpu-id", q.GPUIDs[0])
 	}
 	if q.PublicSSH {
-		args = append(args, "--ssh")
+		args = append(args, "--ssh", "--ports", "22/tcp")
 	}
 	b, e := r.call(ctx, args...)
 	if e != nil {
