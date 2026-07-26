@@ -7,7 +7,7 @@ image: ghcr.io/dyamagishi/gpu-run-sd-scripts@sha256:73719bb3291117432fb1241b0bf0
 inputs:
   # Images and same-name .txt captions must be in this one directory.
   dataset_dir: {type: directory, required: true, extensions: [jpg, jpeg, png, webp, txt]}
-  base_model: {type: file, required: true}
+  base_model: {type: https_url, required: true}
   output_name: {type: string, required: true}
   resolution: {type: integer, default: 1024}
   train_batch_size: {type: integer, default: 1}

@@ -351,7 +351,12 @@ func runCmd(a []string) int {
 		if r.Inputs[t.Input].Type == "directory" && !strings.HasSuffix(source, string(os.PathSeparator)) {
 			source += string(os.PathSeparator)
 		}
-		if e = job.Transfer(ctx, source, remote); e != nil {
+		if strings.HasPrefix(source, "https://") {
+			e = job.FetchURL(ctx, source, remote)
+		} else {
+			e = job.Transfer(ctx, source, remote)
+		}
+		if e != nil {
 			st.Phase = "transfer_failed"
 			st.Error = e.Error()
 			_ = s.Put(st)

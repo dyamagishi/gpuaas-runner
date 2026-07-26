@@ -7,7 +7,7 @@ gpu-run recipe validate recipes/sdxl-lora.yaml --input dataset_dir=./dataset --i
 gpu-run run recipes/sdxl-lora.yaml --input dataset_dir=./dataset --input base_model=./sdxl-base --input output_name=my-lora
 ```
 
-`recipes/sdxl-lora.yaml` のimageは公開GHCR digestへ置換してから利用する。タグやプレースホルダーはCLIが拒否する。base modelは単一の`.safetensors` checkpointを受け付ける。入力名・成果物名・hard limit precedenceは [`docs/recipe-schema.md`](docs/recipe-schema.md) に固定している。secretと課金停止を含む運用は [`docs/operations.md`](docs/operations.md) を参照。
+`recipes/sdxl-lora.yaml` のimageは公開GHCR digestへ置換してから利用する。タグやプレースホルダーはCLIが拒否する。base modelは公開HTTPSの`.safetensors` checkpointをPod内へ直接取得する。入力名・成果物名・hard limit precedenceは [`docs/recipe-schema.md`](docs/recipe-schema.md) に固定している。secretと課金停止を含む運用は [`docs/operations.md`](docs/operations.md) を参照。
 
 ## Status
 

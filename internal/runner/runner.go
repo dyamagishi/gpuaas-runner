@@ -93,6 +93,25 @@ func (q Job) Transfer(ctx context.Context, src, dst string) error {
 	return q.exec(ctx, "rsync", "-a", "-e", q.rsyncSSH(), src, q.sshTarget(remote))
 }
 
+// FetchURL downloads a public HTTPS input inside the Pod, avoiding a slow
+// local-to-Pod upload for large model checkpoints.
+func (q Job) FetchURL(ctx context.Context, url, dst string) error {
+	if err := q.validateSSH(); err != nil {
+		return err
+	}
+	if !strings.HasPrefix(url, "https://") || strings.ContainsAny(url, "\x00\r\n;&|<>`$()") {
+		return errors.New("only safe HTTPS URLs are supported")
+	}
+	if err := safeRemote(dst); err != nil {
+		return err
+	}
+	remote := filepath.Join(q.RemoteDir, dst)
+	if err := q.exec(ctx, "ssh", append(append(q.sshArgs(), q.sshHostTarget(), "--", "mkdir", "-p", filepath.Dir(remote)), []string{}...)...); err != nil {
+		return err
+	}
+	return q.exec(ctx, "ssh", append(append(q.sshArgs(), q.sshHostTarget(), "--", "curl", "--fail", "--location", "--retry", "3", "--output", remote, url), []string{}...)...)
+}
+
 // Run writes each stage's argv as a NUL-delimited file and asks the image's
 // remote-runner to execute it. No shell evaluation of user supplied argv occurs.
 func (q Job) Run(ctx context.Context) error {
