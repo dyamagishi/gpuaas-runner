@@ -39,6 +39,7 @@ stages:
       - --resolution=${inputs.resolution}
       - --train_batch_size=${inputs.train_batch_size}
       - --max_train_steps=${inputs.max_train_steps}
+      - --save_every_n_steps=${inputs.max_train_steps}
       - --learning_rate=${inputs.learning_rate}
       - --output_dir=/workspace/gpu-run/runs/${run.id}/output
       - --output_name=${inputs.output_name}
