@@ -37,11 +37,3 @@ jobs:
         run: |
           echo "image digest: ${{ steps.image.outputs.digest }}"
           echo "Update recipes/sdxl-lora.yaml with this digest in a follow-up commit."
-      - uses: goreleaser/goreleaser-action@v6
-        if: ${{ hashFiles('go.mod') != '' }}
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
