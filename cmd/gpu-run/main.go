@@ -399,12 +399,14 @@ func runCmd(a []string) int {
 		st.Phase = "remote_failed"
 		st.Error = pollErr.Error()
 		_ = s.Put(st)
+		_ = job.FetchDiagnostics(ctx, *out)
 		return exitRemote
 	}
 	if phase, _ := status["phase"].(string); phase == "failed" || phase == "error" {
 		st.Phase = "remote_failed"
 		st.Error = fmt.Sprintf("remote runner phase=%s exit_code=%v", phase, status["exit_code"])
 		_ = s.Put(st)
+		_ = job.FetchDiagnostics(ctx, *out)
 		return exitRemote
 	}
 	if e = job.FetchArtifacts(ctx, *out); e != nil {
