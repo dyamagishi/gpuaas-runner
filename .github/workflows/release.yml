@@ -33,6 +33,15 @@ jobs:
           tags: ghcr.io/${{ github.repository_owner }}/gpu-run-sd-scripts:${{ github.ref_name }}
           provenance: true
           sbom: true
+      - name: Make GHCR package public for RunPod pulls
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --fail-with-body -X PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/user/packages/container/gpu-run-sd-scripts \
+            -d '{"visibility":"public"}'
       - name: Print immutable recipe reference
         run: |
           echo "image digest: ${{ steps.image.outputs.digest }}"
