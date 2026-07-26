@@ -16,7 +16,7 @@ func TestValidateDigestAndPlaceholder(t *testing.T) {
 		t.Fatal(e)
 	}
 }
-func TestBundledRecipePlaceholder(t *testing.T) {
+func TestBundledRecipeLoadsWithPinnedImage(t *testing.T) {
 	b, e := os.ReadFile("../../recipes/sdxl-lora.yaml")
 	if e != nil {
 		t.Skip(e)
@@ -26,8 +26,8 @@ func TestBundledRecipePlaceholder(t *testing.T) {
 	if e = os.WriteFile(p, []byte(s), 0600); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = Load(p); e == nil {
-		t.Fatal("expected missing required inputs")
+	if _, e = Load(p); e != nil {
+		t.Fatal(e)
 	}
 }
 func TestRejectsUnsafePath(t *testing.T) {
