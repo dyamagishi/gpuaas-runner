@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -32,6 +33,7 @@ const (
 
 func main() { os.Exit(run(os.Args[1:])) }
 func run(a []string) int {
+	loadDotEnv(".env")
 	if len(a) == 0 {
 		usage()
 		return exitInput
@@ -50,6 +52,36 @@ func run(a []string) int {
 	default:
 		usage()
 		return exitInput
+	}
+}
+
+// loadDotEnv loads simple KEY=VALUE entries without overwriting the process environment.
+// Secrets are never printed or persisted by the CLI.
+func loadDotEnv(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		line := strings.TrimSpace(s.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+		key, value, ok := strings.Cut(line, "=")
+		if !ok || strings.TrimSpace(key) == "" {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+		if len(value) >= 2 && ((value[0] == '\'' && value[len(value)-1] == '\'') || (value[0] == '"' && value[len(value)-1] == '"')) {
+			value = value[1 : len(value)-1]
+		}
+		if os.Getenv(key) == "" {
+			_ = os.Setenv(key, value)
+		}
 	}
 }
 func usage() {

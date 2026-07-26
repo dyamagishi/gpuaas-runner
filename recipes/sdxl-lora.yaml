@@ -19,7 +19,7 @@ requirements:
   min_vram_gb: 24
   disk_gb: 80
   cuda: "12.4"
-  allowed_gpu_ids: ["NVIDIA RTX A5000", "NVIDIA RTX 4090", "NVIDIA A40", "NVIDIA A100"]
+  allowed_gpu_ids: ["NVIDIA RTX A5000", "NVIDIA GeForce RTX 4090", "NVIDIA A40", "NVIDIA A100-SXM4-80GB"]
 
 transfers:
   - {input: dataset_dir, remote_path: inputs/dataset}
