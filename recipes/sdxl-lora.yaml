@@ -2,7 +2,7 @@ schema_version: 1
 name: sdxl-lora
 # Replace REPLACE_WITH_64_HEX_DIGEST after publishing the image. The CLI must
 # reject this placeholder and any mutable tag before creating a Pod.
-image: ghcr.io/dyamagishi/gpu-run-sd-scripts@sha256:ee06a6bfe8a99b603d54ec9fa502cdd689e93fc826da81decf208450de933fd8
+image: ghcr.io/dyamagishi/gpu-run-sd-scripts@sha256:7768b06e313b6b6e1d323e0f13761f0ec58f741e82c590f9125f3d17bbe70701
 
 inputs:
   # Images and same-name .txt captions must be in this one directory.
