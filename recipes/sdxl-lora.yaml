@@ -37,6 +37,7 @@ stages:
       - --train_data_dir=${transfers.dataset_dir}/image
       - --caption_extension=.txt
       - --resolution=${inputs.resolution}
+      - --enable_bucket
       - --train_batch_size=${inputs.train_batch_size}
       - --max_train_steps=${inputs.max_train_steps}
       - --save_every_n_steps=${inputs.max_train_steps}
