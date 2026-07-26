@@ -47,11 +47,7 @@ stages:
       - --mixed_precision=fp16
 
 artifacts:
-  - name: final_model
-    kind: file
-    remote_path: "output/${inputs.output_name}.safetensors"
-    required: true
   - name: checkpoints
     kind: directory
     remote_path: "output"
-    required: false
+    required: true
