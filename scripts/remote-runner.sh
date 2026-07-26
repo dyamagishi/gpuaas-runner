@@ -25,6 +25,10 @@ argv_file=$3
 working_dir=$4
 artifact_root=${5:-"$run_dir"}
 
+# SSH sessions do not inherit the container's Docker ENV PATH; expose the
+# training virtualenv explicitly for argv such as `python`/`accelerate`.
+export PATH="/opt/venv/bin:$PATH"
+
 [[ -f "$argv_file" ]] || { echo "argv file not found: $argv_file" >&2; exit 2; }
 mkdir -p -- "$run_dir"
 run_real=$(realpath -m -- "$run_dir")

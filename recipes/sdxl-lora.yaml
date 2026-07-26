@@ -29,7 +29,7 @@ stages:
   - id: train
     working_dir: /opt/sd-scripts
     argv:
-      - accelerate
+      - /opt/venv/bin/accelerate
       - launch
       - --num_cpu_threads_per_process=2
       - sdxl_train_network.py
