@@ -411,6 +411,7 @@ func runCmd(a []string) int {
 		st.Phase = "artifact_failed"
 		st.Error = e.Error()
 		_ = s.Put(st)
+		_ = job.FetchDiagnostics(ctx, *out)
 		if de := p.DeletePod(ctx, pod.ID); de != nil {
 			st.Phase = "cleanup_required"
 			st.Error = de.Error()

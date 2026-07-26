@@ -245,6 +245,25 @@ func (q Job) FetchArtifacts(ctx context.Context, out string) error {
 	return nil
 }
 
+// FetchDiagnostics preserves remote runner evidence before a failed Pod is
+// deleted, so artifact/path failures can be diagnosed from local files.
+func (q Job) FetchDiagnostics(ctx context.Context, out string) error {
+	if err := q.validateSSH(); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(out, 0700); err != nil {
+		return err
+	}
+	for _, name := range []string{"status.json", "stdout.log", "stderr.log", "artifact-manifest.jsonl"} {
+		dst := filepath.Join(out, "remote-"+name)
+		src := q.sshTarget(filepath.Join(q.RemoteDir, name))
+		if err := q.exec(ctx, "rsync", "-a", "-e", q.rsyncSSH(), src, dst); err != nil {
+			continue
+		}
+	}
+	return nil
+}
+
 func (q Job) exec(ctx context.Context, name string, args ...string) error {
 	_, err := q.capture(ctx, name, args...)
 	return err
