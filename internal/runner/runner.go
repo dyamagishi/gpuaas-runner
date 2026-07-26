@@ -84,7 +84,11 @@ func (q Job) Transfer(ctx context.Context, src, dst string) error {
 	if err := safeRemote(dst); err != nil {
 		return err
 	}
-	return q.exec(ctx, "rsync", "-az", "-e", q.rsyncSSH(), src, q.sshTarget(filepath.Join(q.RemoteDir, dst)))
+	remote := filepath.Join(q.RemoteDir, dst)
+	if err := q.exec(ctx, "ssh", append(append(q.sshArgs(), q.sshHostTarget(), "--", "mkdir", "-p", filepath.Dir(remote)), []string{}...)...); err != nil {
+		return err
+	}
+	return q.exec(ctx, "rsync", "-az", "-e", q.rsyncSSH(), src, q.sshTarget(remote))
 }
 
 // Run writes each stage's argv as a NUL-delimited file and asks the image's
