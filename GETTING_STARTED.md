@@ -1,23 +1,29 @@
 # gpu-run Getting Started
 
-`gpu-run` は、あらかじめ用意したレシピを指定するだけで、GPUクラウド上の学習環境を起動し、素材の転送、学習、成果物の回収、Podの削除まで行うCLIです。
+`gpu-run` は、GPUを必要とする処理を「レシピ」として定義し、同じCLIからクラウド上で実行するためのジョブランナーです。
 
-現在の実装は **RunPod Secure Cloud + sd-scriptsのSDXL LoRA** に対応しています。
+利用者が意識するのは、基本的に次の3つだけです。
 
-## 1. 前提ツール
+```text
+レシピ       = どの環境で、何を実行するか
+入力         = 今回使うデータ、モデル、パラメータ
+成果物       = 実行後に手元へ戻すファイル
+```
+
+GPU Podの起動、ファイル転送、リモート実行、ログ取得、成果物回収、環境削除はランナーが担当します。
+
+## 1. まず動かす
+
+### 必要なもの
 
 - macOSまたはLinux
 - Go 1.22以上
 - `runpodctl`
-- RunPod API key
+- GPUプロバイダのAPI key
 
-`runpodctl` はRunPodの公式CLIをインストールし、ログインできる状態にしておきます。
+現在のv1では、プロバイダとしてRunPod Secure Cloudを使用します。
 
-```sh
-runpodctl doctor
-```
-
-## 2. CLIをビルドする
+### CLIをビルドする
 
 ```sh
 git clone https://github.com/dyamagishi/gpuaas-runner.git
@@ -25,96 +31,97 @@ cd gpuaas-runner
 go build -o gpu-run ./cmd/gpu-run
 ```
 
-## 3. API keyを設定する
+### API keyを設定する
 
-リポジトリ直下の `.env` にRunPod API keyを書きます。
+リポジトリ直下の `.env` に設定します。
 
 ```dotenv
 RUNPOD_API_KEY=xxxxxxxxxxxxxxxx
 ```
 
-`.env` はCLI起動時に自動で読み込まれます。Gitへコミットしないでください。
+`.env` はCLI起動時に自動読込されます。Gitへコミットしないでください。
 
-## 4. 実行上限を設定する
-
-初回だけ実行します。
+### 実行上限を設定する
 
 ```sh
 ./gpu-run config init
 ```
 
-設定ファイルは `~/.config/gpu-run/config.yaml` に作成されます。GPU、最大実行時間、最大ディスク容量、最大時間単価をここで制限できます。
+`~/.config/gpu-run/config.yaml` で、許可GPU、最大実行時間、最大ディスク容量、最大時間単価を設定します。これらは安全側のハードリミットで、レシピやCLI引数で緩和できません。
 
-例えばA40だけを許可する場合は、次のようにします。
+## 2. レシピを理解する
+
+レシピは、特定の学習ツールに限らないジョブ定義です。主に次を持ちます。
+
+- 実行するコンテナイメージ（digest固定）
+- 必要GPU、VRAM、ディスク、CUDA条件
+- ユーザーから受け取る入力値
+- リモートで実行するargv
+- ローカルから転送する入力
+- 回収する成果物
+
+例えば、レシピは次のような責務を持ちます。
 
 ```yaml
-max_hourly_usd: 1
-max_runtime: 1800s
-max_disk_gb: 100
-allowed_gpu_ids:
-  - NVIDIA A40
+name: some-gpu-job
+image: ghcr.io/example/job@sha256:<64-hex-digest>
+
+inputs:
+  dataset_dir: {type: directory, required: true}
+  output_name: {type: string, required: true}
+
+stages:
+  - id: main
+    working_dir: /opt/app
+    argv:
+      - /opt/app/run-job
+      - --dataset=${transfers.dataset_dir}
+      - --output=/workspace/output
+      - --name=${inputs.output_name}
+
+artifacts:
+  - name: output
+    kind: directory
+    remote_path: output
+    required: true
 ```
 
-レシピの要求とこの設定の両方を満たす場合だけPodが作成されます。
+レシピを追加すれば、同じランナーで別の学習、変換、評価、生成ジョブを扱えます。ツール固有の引数はレシピ側に閉じ込め、CLIの使い方は共通に保ちます。
 
-## 5. データセットを準備する
+## 3. 入力を渡して実行する
 
-SDXL LoRAレシピでは、画像と同名のcaption `.txt` を配置します。
-
-```text
-KAKUCHI_NENE/
-└── image/
-    └── 50_nene/
-        ├── 001.png
-        ├── 001.txt
-        ├── 002.png
-        └── 002.txt
-```
-
-`dataset_dir` には `image` ディレクトリを含む親ディレクトリを指定します。
-
-## 6. レシピを検証する
-
-レシピは、実行環境・必要GPU・入力項目・学習コマンド・成果物を定義したYAMLです。
+まず、入力値とレシピが整合するか検証します。
 
 ```sh
-./gpu-run recipe validate recipes/sdxl-lora.yaml \
-  --input dataset_dir=/Volumes/ssd01/data/LoRA/KAKUCHI_NENE \
-  --input base_model=https://huggingface.co/cagliostrolab/animagine-xl-4.0/resolve/main/animagine-xl-4.0.safetensors \
-  --input output_name=kakuchi_nene \
-  --input max_train_steps=10
+./gpu-run recipe validate recipes/<recipe>.yaml \
+  --input dataset_dir=/path/to/dataset \
+  --input output_name=my-result
 ```
 
-検証では、入力不足、存在しないパス、不正なイメージ指定、未解決の変数などを実行前に検出します。
-
-## 7. 学習を実行する
+問題がなければ実行します。
 
 ```sh
-./gpu-run run recipes/sdxl-lora.yaml \
-  --input dataset_dir=/Volumes/ssd01/data/LoRA/KAKUCHI_NENE \
-  --input base_model=https://huggingface.co/cagliostrolab/animagine-xl-4.0/resolve/main/animagine-xl-4.0.safetensors \
-  --input output_name=kakuchi_nene \
-  --input max_train_steps=10
+./gpu-run run recipes/<recipe>.yaml \
+  --input dataset_dir=/path/to/dataset \
+  --input output_name=my-result
 ```
 
-実行中は、次の処理が自動で行われます。
+ランナーは次の順で処理します。
 
-1. RunPodで条件に合うGPU Podを起動
-2. データセットをPodへ転送
-3. `base_model` のHTTPSファイルをPod内で取得
-4. レシピの学習コマンドを実行
-5. ログとsafetensorsをローカルへ回収
+1. レシピと入力を検証
+2. hard limit内でGPU Podを起動
+3. 必要な入力ファイルをPodへ転送
+4. レシピのstageをリモート実行
+5. ログと成果物をローカルへ回収
 6. Podを削除して課金を停止
 
-本番学習では `max_train_steps=10` を `1000` や `2000` などに変更します。
-
-## 8. 成果物と実行履歴を確認する
+## 4. 結果と状態を確認する
 
 成果物はデフォルトで次に保存されます。
 
 ```text
 runs/<recipe-name>/<run-id>/
-├── checkpoints/
+├── <artifact directories or files>
 ├── stdout.log
 ├── stderr.log
 └── status.json
@@ -126,38 +133,44 @@ runs/<recipe-name>/<run-id>/
 ./gpu-run runs list
 ```
 
-個別の状態をJSONで確認します。
+個別の状態を確認します。
 
 ```sh
 ./gpu-run status <run-id>
 ```
 
-## レシピを増やす
-
-レシピを追加すると、同じCLIで別の学習処理を実行できます。
+失敗時はrunディレクトリのログとdiagnosticsを確認します。途中で停止したPodを明示的に削除する場合は、状態を確認してから次を実行します。
 
 ```sh
-./gpu-run run recipes/musubi-tuner.yaml \
-  --input dataset_dir=/path/to/data \
-  --input output_name=my-model
+./gpu-run cancel <run-id>
+./gpu-run cleanup <run-id>
 ```
 
-レシピには主に次を定義します。
+## 5. 動作確認済みの例
 
-- 使用するコンテナイメージ
-- GPU/VRAM/ディスク要件
-- 入力値（素材、モデルURL、ハイパーパラメータ）
-- リモートで実行するargv
-- 回収する成果物
+現在同梱されている実レシピは、sd-scriptsによるSDXL LoRAです。これはプロダクトの目的そのものではなく、レシピ駆動の実行経路を確認するサンプルです。
 
-そのため、利用者は毎回Docker、SSH、ファイル転送、クラウドPodの削除を手作業で行う必要がありません。
+```sh
+./gpu-run run recipes/sdxl-lora.yaml \
+  --input dataset_dir=/path/to/dataset \
+  --input base_model=https://example.com/base-model.safetensors \
+  --input output_name=my-lora \
+  --input max_train_steps=10
+```
 
-## 現在の制限
+このレシピでは、ベースモデルはPod内でHTTPS取得し、データセットだけをローカルから転送します。本番学習では `max_train_steps` などを用途に合わせて変更します。
 
-- 対応プロバイダはRunPodのみ
-- `musubi-tuner` 用レシピはまだ未同梱
-- `--detach`、attach/recoverによる途中再接続は未実装
-- remote secretの注入は未実装
-- 成果物manifestのSHA-256をCLI側で自動照合する機能は未実装
+## 現在の範囲と今後の拡張
 
-詳細なスキーマと運用上の注意点は、[`docs/recipe-schema.md`](docs/recipe-schema.md) と [`docs/operations.md`](docs/operations.md) を参照してください。
+現在のv1で実装済みなのは、RunPod Secure Cloud、digest固定コンテナ、レシピ入力解決、SSH/rsync転送、リモートrunner、成果物回収、cleanupです。
+
+今後は同じレシピインターフェースに対して、次を追加していく想定です。
+
+- Vast.aiプロバイダ
+- musubi-tunerなどのレシピ
+- attach/recoverによる再接続
+- checkpointからの再開
+- remote secretの安全な注入
+- 成果物manifestのCLI側ハッシュ検証
+
+レシピの詳細仕様は [`docs/recipe-schema.md`](docs/recipe-schema.md)、運用上の制約は [`docs/operations.md`](docs/operations.md) を参照してください。
