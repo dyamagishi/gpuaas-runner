@@ -2,6 +2,8 @@
 
 Recipeを呼び出してGPUクラウド上の学習を実行するCLI（v1はRunpod Secure Cloud + sd-scripts SDXL LoRA）。
 
+初めて使う場合は [`gettingstart.md`](gettingstart.md) を参照してください。
+
 ```sh
 gpu-run recipe validate recipes/sdxl-lora.yaml --input dataset_dir=./dataset --input base_model=./sdxl-base --input output_name=my-lora
 gpu-run run recipes/sdxl-lora.yaml --input dataset_dir=./dataset --input base_model=./sdxl-base --input output_name=my-lora
