@@ -148,7 +148,7 @@ runs/<recipe-name>/<run-id>/
 
 ## 5. 動作確認済みの例
 
-現在同梱されている実レシピは、sd-scriptsによるSDXL LoRAです。これはプロダクトの目的そのものではなく、レシピ駆動の実行経路を確認するサンプルです。
+現在同梱されている実レシピは、sd-scriptsによるSDXL LoRAです。これはプロダクトの目的そのものではなく、レシピ駆動の実行経路を確認するサンプルです。具体的なデータセット構成、引数、Animagine XLでの実行例は [`examples/sdxl-sd-scripts.md`](examples/sdxl-sd-scripts.md) に分離しています。
 
 ```sh
 ./gpu-run run recipes/sdxl-lora.yaml \
