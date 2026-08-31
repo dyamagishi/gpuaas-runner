@@ -34,7 +34,7 @@ https://huggingface.co/circlestone-labs/Anima/resolve/f973fc41ec7545364ac9776c24
 
 ## Commands
 
-Replace the zero digest in `recipes/anima-lora.yaml` with the published `gpu-run-anima-sd-scripts` digest first.
+The recipe pins `ghcr.io/dyamagishi/gpu-run-anima-sd-scripts@sha256:bb00e01aa60426dae9e2f52c8bf6d8cb4515f07cdc8ece2c02f325a16c0c5f58`.
 
 ```sh
 ANIMA_DIT='https://huggingface.co/circlestone-labs/Anima/resolve/f973fc41ec7545364ac9776c2440285f43ff2a30/split_files/diffusion_models/anima-base-v1.0.safetensors'

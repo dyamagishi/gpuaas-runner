@@ -1,8 +1,6 @@
 schema_version: 1
 name: anima-lora
-# Replace the digest after publishing Dockerfile.anima. Zero digest is valid
-# syntax so `recipe validate` works; `gpu-run run` cannot pull it.
-image: ghcr.io/dyamagishi/gpu-run-anima-sd-scripts@sha256:0000000000000000000000000000000000000000000000000000000000000000
+image: ghcr.io/dyamagishi/gpu-run-anima-sd-scripts@sha256:bb00e01aa60426dae9e2f52c8bf6d8cb4515f07cdc8ece2c02f325a16c0c5f58
 
 inputs:
   dataset_dir: {type: directory, required: true, extensions: [jpg, jpeg, png, webp, txt]}
