@@ -30,6 +30,27 @@ func TestBundledRecipeLoadsWithPinnedImage(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+func TestBundledAnimaRecipeLoadsAndIsSingleStage(t *testing.T) {
+	r, e := Load("../../recipes/anima-lora.yaml")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if r.Name != "anima-lora" {
+		t.Fatalf("name %s", r.Name)
+	}
+	if len(r.Stages) != 1 {
+		t.Fatalf("v1 requires exactly one stage, got %d", len(r.Stages))
+	}
+	if r.Stages[0].Argv[0] != "/opt/gpu-run/run-anima-lora" {
+		t.Fatalf("stage argv0 %v", r.Stages[0].Argv)
+	}
+	if len(r.Requirements.AllowedGPU) != 1 || r.Requirements.AllowedGPU[0] != "NVIDIA A40" {
+		t.Fatalf("allowed gpu %v", r.Requirements.AllowedGPU)
+	}
+	if r.Artifacts[0].RemotePath != "output" || r.Artifacts[0].Name != "checkpoints" {
+		t.Fatalf("artifact %v", r.Artifacts[0])
+	}
+}
 func TestRejectsUnsafePath(t *testing.T) {
 	r := Recipe{SchemaVersion: 1, Name: "x", Image: "ghcr.io/x@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", Stages: []Stage{{ID: "s", Argv: []string{"echo"}}}, Artifacts: []Artifact{{Name: "x", RemotePath: "../x"}}}
 	if Validate(r) == nil {

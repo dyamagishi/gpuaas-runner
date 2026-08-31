@@ -1,0 +1,45 @@
+schema_version: 1
+name: anima-lora
+# Replace the digest after publishing Dockerfile.anima. Zero digest is valid
+# syntax so `recipe validate` works; `gpu-run run` cannot pull it.
+image: ghcr.io/dyamagishi/gpu-run-anima-sd-scripts@sha256:0000000000000000000000000000000000000000000000000000000000000000
+
+inputs:
+  dataset_dir: {type: directory, required: true, extensions: [jpg, jpeg, png, webp, txt]}
+  anima_dit: {type: https_url, required: true}
+  qwen3: {type: https_url, required: true}
+  vae: {type: https_url, required: true}
+  output_name: {type: string, required: true}
+  max_train_steps: {type: integer, default: 1800}
+
+requirements:
+  gpus: 1
+  min_vram_gb: 24
+  disk_gb: 80
+  cuda: "12.4"
+  allowed_gpu_ids: ["NVIDIA A40"]
+
+transfers:
+  - {input: dataset_dir, remote_path: inputs/dataset}
+  - {input: anima_dit, remote_path: inputs/anima_dit.safetensors}
+  - {input: qwen3, remote_path: inputs/qwen3.safetensors}
+  - {input: vae, remote_path: inputs/vae.safetensors}
+
+stages:
+  - id: train
+    working_dir: /opt/sd-scripts
+    argv:
+      - /opt/gpu-run/run-anima-lora
+      - --dataset-dir=${transfers.dataset_dir}
+      - --anima-dit=${transfers.anima_dit}
+      - --qwen3=${transfers.qwen3}
+      - --vae=${transfers.vae}
+      - --output-dir=/workspace/gpu-run/runs/${run.id}/output
+      - --output-name=${inputs.output_name}
+      - --max-train-steps=${inputs.max_train_steps}
+
+artifacts:
+  - name: checkpoints
+    kind: directory
+    remote_path: output
+    required: true
